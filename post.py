@@ -3,7 +3,7 @@
 
 ## ✅ Обновленный `post.py` с человечным стилем:
 
-```python
+
 import os
 import requests
 from groq import Groq
