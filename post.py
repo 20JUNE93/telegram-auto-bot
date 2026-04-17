@@ -94,7 +94,7 @@ def generate_image(image_prompt):
         response = requests.get(url, timeout=120)
         
         if response.status_code == 200 and len(response.content) > 0:
-            print(f"Изображение сгенерировано! ({len(response.content)} байт)")
+            print(f"Изображение сгенерировано! Size: {len(response.content)} bytes")
             return response.content
         else:
             print(f"Ошибка: статус {response.status_code}")
@@ -107,11 +107,14 @@ def generate_image(image_prompt):
         print(f"Ошибка загрузки изображения: {e}")
         return None
 
-def send_to_telegram(text, image_data=None):
-    """Отправляем в Telegram: фото + текст"""
+def send_to_telegram_variant2(text, image_data=None):
+    """ВАРИАНТ 2: Отправляем фото И текст ОТДЕЛЬНЫМИ сообщениями"""
+    
+    success = True
     
     if image_data and len(image_data) > 0:
-        print("Отправляю фото в Telegram...")
+        # ШАГИ 1: Отправляем фото с кратким заголовком
+        print("\nШаг 1: Отправляю фото...")
         
         lines = text.split('\n')
         caption = lines[0][:200] if lines else "Статья"
@@ -131,17 +134,18 @@ def send_to_telegram(text, image_data=None):
             response = requests.post(url, files=files, data=data, timeout=30)
             result = response.json()
             
-            if not result.get('ok'):
+            if result.get('ok'):
+                print("Фото отправлено успешно!")
+            else:
                 print(f"Ошибка фото: {result.get('description')}")
-                return False
-            
-            print("Фото отправлено!")
+                success = False
             
         except Exception as e:
             print(f"Ошибка отправки фото: {e}")
-            return False
+            success = False
         
-        print("Отправляю полный текст...")
+        # ШАГИ 2: Отправляем полный текст отдельным сообщением
+        print("\nШаг 2: Отправляю полный текст...")
         
         url = f"https://api.telegram.org/bot{TG_BOT_TOKEN}/sendMessage"
         
@@ -157,17 +161,17 @@ def send_to_telegram(text, image_data=None):
             result = response.json()
             
             if result.get('ok'):
-                print("Текст отправлен!")
-                return True
+                print("Текст отправлен успешно!")
             else:
                 print(f"Ошибка текста: {result.get('description')}")
-                return False
+                success = False
                 
         except Exception as e:
             print(f"Ошибка отправки текста: {e}")
-            return False
+            success = False
     else:
-        print("Отправляю статью в Telegram...")
+        # Если нет изображения - отправляем только текст
+        print("\nОтправляю статью (без изображения)...")
         
         url = f"https://api.telegram.org/bot{TG_BOT_TOKEN}/sendMessage"
         
@@ -183,15 +187,16 @@ def send_to_telegram(text, image_data=None):
             result = response.json()
             
             if result.get('ok'):
-                print("Статья отправлена!")
-                return True
+                print("Статья отправлена успешно!")
             else:
                 print(f"Ошибка: {result.get('description')}")
-                return False
+                success = False
                 
         except Exception as e:
             print(f"Ошибка: {e}")
-            return False
+            success = False
+    
+    return success
 
 if __name__ == "__main__":
     try:
@@ -206,7 +211,7 @@ if __name__ == "__main__":
         image_data = generate_image(image_prompt)
         print()
         
-        send_to_telegram(article, image_data)
+        send_to_telegram_variant2(article, image_data)
         
         print("\nГотово!")
         
