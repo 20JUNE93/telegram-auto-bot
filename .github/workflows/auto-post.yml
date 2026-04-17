@@ -2,10 +2,7 @@ name: Auto Post Articles
 
 on:
   schedule:
-    # Каждый час (можешь изменить)
     - cron: '0 * * * *'
-  
-  # Кнопка для ручного запуска
   workflow_dispatch:
 
 jobs:
@@ -13,22 +10,18 @@ jobs:
     runs-on: ubuntu-latest
     
     steps:
-      # Скачиваем код из репозитория
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4  # ← Обновил v3 на v4
       
-      # Устанавливаем Python
       - name: Setup Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5  # ← Обновил v4 на v5
         with:
           python-version: '3.11'
       
-      # Устанавливаем библиотеки
       - name: Install dependencies
         run: |
           pip install groq requests
       
-      # Запускаем скрипт
       - name: Generate and post article
         env:
           GROQ_KEY: ${{ secrets.GROQ_KEY }}
