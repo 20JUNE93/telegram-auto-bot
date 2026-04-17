@@ -36,19 +36,18 @@ def generate_article():
 Требования:
 - Объем: 300-500 слов
 - Начни с цепляющего заголовка с эмодзи
-- Используй эмодзи для структуры (📌, ✨, 🔥, 💡)
+- Используй эмодзи для структуры
 - Пиши простым языком
-- Добавь 2-3 интересных факта
-- В конце напиши вывод или совет
-- Не используй более 3 абзацев
+- Добавь интересные факты
+- В конце сделай вывод
 """
     
     print("🤖 Генерирую статью...")
     
     response = client.chat.completions.create(
-        model="llama-3.3-70b-versatile",  # ✅ РАБОЧАЯ МОДЕЛЬ!
+        model="llama-3.3-70b-versatile",
         messages=[
-            {"role": "system", "content": "Ты - опытный писатель Telegram канала. Пиши коротко, интересно и захватывающе!"},
+            {"role": "system", "content": "Ты - опытный писатель Telegram канала. Пиши коротко и интересно!"},
             {"role": "user", "content": prompt}
         ],
         temperature=0.8,
@@ -61,4 +60,31 @@ def generate_article():
 
 def send_to_telegram(text):
     """Отправляем статью в Telegram канал"""
-    url = 
+    url = f"https://api.telegram.org/bot{TG_BOT_TOKEN}/sendMessage"
+    
+    data = {
+        "chat_id": TG_CHAT_ID,
+        "text": text,
+        "parse_mode": "HTML",
+        "disable_web_page_preview": True
+    }
+    
+    print("📤 Отправляю в Telegram...")
+    response = requests.post(url, data=data)
+    
+    if response.status_code == 200:
+        print("✅ Успешно опубликовано!")
+        return True
+    else:
+        print(f"❌ Ошибка: {response.text}")
+        return False
+
+if __name__ == "__main__":
+    try:
+        print("🚀 Запуск бота...")
+        article = generate_article()
+        send_to_telegram(article)
+        print("🎉 Готово!")
+    except Exception as e:
+        print(f"❌ Ошибка: {e}")
+        raise
