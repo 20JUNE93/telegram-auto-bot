@@ -41,7 +41,7 @@ def generate_article():
 - В конце сделай вывод
 """
     
-    print("🤖 Генерирую статью...")
+    print("Генерирую статью...")
     
     response = client.chat.completions.create(
         model="llama-3.3-70b-versatile",
@@ -54,12 +54,12 @@ def generate_article():
     )
     
     article = response.choices[0].message.content
-    print("✅ Статья сгенерирована!")
+    print("Статья сгенерирована!")
     return article
 
 def generate_image_prompt(article):
     """Создаём промпт для изображения на основе статьи"""
-    print("🎨 Генерирую промпт для изображения...")
+    print("Генерирую промпт для изображения...")
     
     prompt = f"""На основе этого текста создай короткий промпт (1-2 строки на английском) для генерации изображения.
 Промпт должен быть визуальным, ярким и захватывающим.
@@ -79,20 +79,137 @@ def generate_image_prompt(article):
     )
     
     image_prompt = response.choices[0].message.content.strip()
-    print(f"✅ Промпт: {image_prompt}")
+    print(f"Промпт: {image_prompt}")
     return image_prompt
 
 def generate_image(image_prompt):
     """Генерируем изображение через Pollinations API"""
-    print("🖼️ Генерирую изображение...")
+    print("Генерирую изображение...")
     
-    # Преобразуем промпт для URL (экранируем спецсимволы)
     safe_prompt = image_prompt.replace(" ", "%20").replace(",", "%2C").replace(".", "%2E")
     url = f"https://image.pollinations.ai/prompt/{safe_prompt}"
     
     try:
-        print(f"⏳ Запрашиваю изображение...")
+        print("Запрашиваю изображение...")
         response = requests.get(url, timeout=120)
         
         if response.status_code == 200 and len(response.content) > 0:
-            print(f"✅ Изображение сгенерировано! 
+            print(f"Изображение сгенерировано! ({len(response.content)} байт)")
+            return response.content
+        else:
+            print(f"Ошибка: статус {response.status_code}")
+            return None
+            
+    except requests.exceptions.Timeout:
+        print("Таймаут - изображение слишком долго генерируется")
+        return None
+    except Exception as e:
+        print(f"Ошибка загрузки изображения: {e}")
+        return None
+
+def send_to_telegram(text, image_data=None):
+    """Отправляем в Telegram: фото + текст"""
+    
+    if image_data and len(image_data) > 0:
+        print("Отправляю фото в Telegram...")
+        
+        lines = text.split('\n')
+        caption = lines[0][:200] if lines else "Статья"
+        
+        url = f"https://api.telegram.org/bot{TG_BOT_TOKEN}/sendPhoto"
+        
+        files = {
+            'photo': ('image.jpg', image_data, 'image/jpeg')
+        }
+        data = {
+            'chat_id': TG_CHAT_ID,
+            'caption': caption,
+            'parse_mode': 'HTML'
+        }
+        
+        try:
+            response = requests.post(url, files=files, data=data, timeout=30)
+            result = response.json()
+            
+            if not result.get('ok'):
+                print(f"Ошибка фото: {result.get('description')}")
+                return False
+            
+            print("Фото отправлено!")
+            
+        except Exception as e:
+            print(f"Ошибка отправки фото: {e}")
+            return False
+        
+        print("Отправляю полный текст...")
+        
+        url = f"https://api.telegram.org/bot{TG_BOT_TOKEN}/sendMessage"
+        
+        data = {
+            'chat_id': TG_CHAT_ID,
+            'text': text,
+            'parse_mode': 'HTML',
+            'disable_web_page_preview': True
+        }
+        
+        try:
+            response = requests.post(url, data=data, timeout=30)
+            result = response.json()
+            
+            if result.get('ok'):
+                print("Текст отправлен!")
+                return True
+            else:
+                print(f"Ошибка текста: {result.get('description')}")
+                return False
+                
+        except Exception as e:
+            print(f"Ошибка отправки текста: {e}")
+            return False
+    else:
+        print("Отправляю статью в Telegram...")
+        
+        url = f"https://api.telegram.org/bot{TG_BOT_TOKEN}/sendMessage"
+        
+        data = {
+            'chat_id': TG_CHAT_ID,
+            'text': text,
+            'parse_mode': 'HTML',
+            'disable_web_page_preview': True
+        }
+        
+        try:
+            response = requests.post(url, data=data, timeout=30)
+            result = response.json()
+            
+            if result.get('ok'):
+                print("Статья отправлена!")
+                return True
+            else:
+                print(f"Ошибка: {result.get('description')}")
+                return False
+                
+        except Exception as e:
+            print(f"Ошибка: {e}")
+            return False
+
+if __name__ == "__main__":
+    try:
+        print("Запуск бота...\n")
+        
+        article = generate_article()
+        print()
+        
+        image_prompt = generate_image_prompt(article)
+        print()
+        
+        image_data = generate_image(image_prompt)
+        print()
+        
+        send_to_telegram(article, image_data)
+        
+        print("\nГотово!")
+        
+    except Exception as e:
+        print(f"\nОшибка: {e}")
+        raise
