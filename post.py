@@ -9,7 +9,7 @@ import os
 import requests
 from groq import Groq
 import random
-from datetime import datetime
+from source import TOPICS, IMAGE_STYLES
 
 GROQ_KEY = os.getenv('GROQ_KEY')
 TG_BOT_TOKEN = os.getenv('TG_BOT_TOKEN')
