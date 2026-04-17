@@ -109,7 +109,9 @@ def send_to_telegram(text, image_data=None):
     """Отправляем статью + изображение в Telegram канал"""
     
     if image_data:
-        # Отправляем с фото
+        # Сокращаем текст под фото (максимум 1024 символа)
+        caption = text[:1020] + "..." if len(text) > 1020 else text
+        
         print("📤 Отправляю статью с фото в Telegram...")
         url = f"https://api.telegram.org/bot{TG_BOT_TOKEN}/sendPhoto"
         
@@ -118,7 +120,7 @@ def send_to_telegram(text, image_data=None):
         }
         data = {
             'chat_id': TG_CHAT_ID,
-            'caption': text,
+            'caption': caption,
             'parse_mode': 'HTML'
         }
         
@@ -145,28 +147,3 @@ def send_to_telegram(text, image_data=None):
     else:
         print(f"❌ Ошибка: {result.get('description')}")
         return False
-
-if __name__ == "__main__":
-    try:
-        print("🚀 Запуск бота...\n")
-        
-        # Генерируем статью
-        article = generate_article()
-        print()
-        
-        # Генерируем промпт для изображения
-        image_prompt = generate_image_prompt(article)
-        print()
-        
-        # Генерируем изображение
-        image_data = generate_image(image_prompt)
-        print()
-        
-        # Отправляем в Telegram
-        send_to_telegram(article, image_data)
-        
-        print("\n🎉 Готово!")
-        
-    except Exception as e:
-        print(f"❌ Ошибка: {e}")
-        raise
