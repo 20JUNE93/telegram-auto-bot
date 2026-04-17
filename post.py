@@ -34,31 +34,25 @@ def generate_article():
     prompt = f"""Напиши интересную статью на тему: {topic}
 
 Требования:
-- Объем: 400-600 слов
+- Объем: 300-500 слов
 - Начни с цепляющего заголовка с эмодзи
-- Используй эмодзи для структуры (📌 для списков, ✨ для выделения)
+- Используй эмодзи для структуры (📌, ✨, 🔥, 💡)
 - Пиши простым языком
-- Добавь интересные факты
-- В конце сделай вывод
-
-Формат:
-🔥 [ЗАГОЛОВОК]
-
-[Текст статьи]
-
-Время публикации: {current_time}
+- Добавь 2-3 интересных факта
+- В конце напиши вывод или совет
+- Не используй более 3 абзацев
 """
     
     print("🤖 Генерирую статью...")
     
     response = client.chat.completions.create(
-        model="llama-3.1-70b-versatile",  # ← НОВАЯ МОДЕЛЬ!
+        model="llama-3.3-70b-versatile",  # ✅ РАБОЧАЯ МОДЕЛЬ!
         messages=[
-            {"role": "system", "content": "Ты - профессиональный копирайтер, пишущий интересные статьи для Telegram канала."},
+            {"role": "system", "content": "Ты - опытный писатель Telegram канала. Пиши коротко, интересно и захватывающе!"},
             {"role": "user", "content": prompt}
         ],
         temperature=0.8,
-        max_tokens=2000
+        max_tokens=1500
     )
     
     article = response.choices[0].message.content
@@ -67,38 +61,4 @@ def generate_article():
 
 def send_to_telegram(text):
     """Отправляем статью в Telegram канал"""
-    url = f"https://api.telegram.org/bot{TG_BOT_TOKEN}/sendMessage"
-    
-    data = {
-        "chat_id": TG_CHAT_ID,
-        "text": text,
-        "parse_mode": "HTML",
-        "disable_web_page_preview": True
-    }
-    
-    print("📤 Отправляю в Telegram...")
-    response = requests.post(url, data=data)
-    
-    if response.status_code == 200:
-        print("✅ Успешно опубликовано!")
-        return True
-    else:
-        print(f"❌ Ошибка: {response.text}")
-        return False
-
-# Основная программа
-if __name__ == "__main__":
-    try:
-        print("🚀 Запуск бота...")
-        
-        # Генерируем статью
-        article = generate_article()
-        
-        # Отправляем в Telegram
-        send_to_telegram(article)
-        
-        print("🎉 Готово!")
-        
-    except Exception as e:
-        print(f"❌ Произошла ошибка: {e}")
-        raise
+    url = 
