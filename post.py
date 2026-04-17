@@ -106,13 +106,16 @@ def generate_image(image_prompt):
         return None
 
 def send_to_telegram(text, image_data=None):
-    """Отправляем статью + изображение в Telegram канал"""
+    """Отправляем изображение + текст в Telegram канал"""
     
     if image_data:
-        # Сокращаем текст под фото (максимум 1024 символа)
-        caption = text[:1020] + "..." if len(text) > 1020 else text
+        # Шаг 1: Отправляем фото с коротким заголовком
+        print("📤 Отправляю фото в Telegram...")
         
-        print("📤 Отправляю статью с фото в Telegram...")
+        # Берём только первую строку (заголовок) для фото
+        lines = text.split('\n')
+        caption = lines[0][:200]  # Заголовок до 200 символов
+        
         url = f"https://api.telegram.org/bot{TG_BOT_TOKEN}/sendPhoto"
         
         files = {
@@ -124,9 +127,38 @@ def send_to_telegram(text, image_data=None):
             'parse_mode': 'HTML'
         }
         
-        response = requests.post(url, files=files, data=data)
+        response1 = requests.post(url, files=files, data=data)
+        result1 = response1.json()
+        
+        if not result1.get('ok'):
+            print(f"❌ Ошибка отправки фото: {result1.get('description')}")
+            return False
+        
+        print("✅ Фото отправлено!")
+        
+        # Шаг 2: Отправляем полный текст отдельным сообщением
+        print("📤 Отправляю полный текст в Telegram...")
+        
+        url = f"https://api.telegram.org/bot{TG_BOT_TOKEN}/sendMessage"
+        
+        data = {
+            'chat_id': TG_CHAT_ID,
+            'text': text,
+            'parse_mode': 'HTML',
+            'disable_web_page_preview': True
+        }
+        
+        response2 = requests.post(url, data=data)
+        result2 = response2.json()
+        
+        if result2.get('ok'):
+            print("✅ Текст отправлен!")
+            return True
+        else:
+            print(f"❌ Ошибка отправки текста: {result2.get('description')}")
+            return False
     else:
-        # Отправляем только текст
+        # Если нет изображения - отправляем только текст
         print("📤 Отправляю статью в Telegram...")
         url = f"https://api.telegram.org/bot{TG_BOT_TOKEN}/sendMessage"
         
@@ -138,12 +170,11 @@ def send_to_telegram(text, image_data=None):
         }
         
         response = requests.post(url, data=data)
-    
-    result = response.json()
-    
-    if result.get('ok'):
-        print("✅ Успешно опубликовано!")
-        return True
-    else:
-        print(f"❌ Ошибка: {result.get('description')}")
-        return False
+        result = response.json()
+        
+        if result.get('ok'):
+            print("✅ Успешно опубликовано!")
+            return True
+        else:
+            print(f"❌ Ошибка: {result.get('description')}")
+            return False
